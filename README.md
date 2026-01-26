@@ -6,6 +6,10 @@ A powerful, privacy-focused file converter that runs entirely on your device. Co
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-Source--Available-orange.svg)
 
+<p align="center">
+  <img src="docs/screenshots/main-interface.png" alt="LocalConvert Main Interface" width="800">
+</p>
+
 ---
 
 ## Why LocalConvert?
@@ -74,6 +78,10 @@ Convert multiple files at once with batch processing:
 - Parallel processing for faster conversions
 - Convert entire folders recursively
 
+<p align="center">
+  <img src="docs/screenshots/batch-conversion.png" alt="Batch Conversion" width="700">
+</p>
+
 ### Video Trimming & Cutting
 
 Built-in video trimmer with visual timeline:
@@ -83,6 +91,10 @@ Built-in video trimmer with visual timeline:
 - Set start and end points by dragging
 - Preview your cuts before converting
 - Export to multiple formats (MP4, MKV, WebM, AVI, MOV, GIF)
+
+<p align="center">
+  <img src="docs/screenshots/video-trimmer.png" alt="Video Trimmer" width="700">
+</p>
 
 ### PDF Editor & Tools
 
@@ -96,6 +108,10 @@ Comprehensive PDF editing capabilities:
 - **Form Field Editing** - Fill and edit PDF forms
 - **Page Thumbnails** - Visual page navigation
 
+<p align="center">
+  <img src="docs/screenshots/pdf-editor.png" alt="PDF Editor" width="700">
+</p>
+
 ### Image Preview & Comparison
 
 Side-by-side image comparison with:
@@ -104,6 +120,10 @@ Side-by-side image comparison with:
 - Zoom controls for detail inspection
 - File size comparison (original vs. converted)
 - Real-time preview of compression effects
+
+<p align="center">
+  <img src="docs/screenshots/image-comparison.png" alt="Image Comparison" width="700">
+</p>
 
 ### GPU Hardware Acceleration
 
@@ -172,6 +192,10 @@ Monitor your conversions:
 - Processing speed display
 - Individual file progress tracking
 - Cancel conversions anytime
+
+<p align="center">
+  <img src="docs/screenshots/conversion-progress.png" alt="Conversion Progress" width="700">
+</p>
 
 ### Output Filename Templates
 
@@ -317,6 +341,10 @@ LocalConvert uses industry-standard open-source tools. Install the ones you need
 | [Ghostscript](https://ghostscript.com/) | PDF operations | PDF | Optional |
 | [Tesseract](https://github.com/tesseract-ocr/tesseract) | OCR text extraction | Images, PDF | Optional |
 | [7-Zip](https://www.7-zip.org/) | Archive operations | Archives | Optional |
+
+<p align="center">
+  <img src="docs/screenshots/tools-setup.png" alt="Tools Setup" width="600">
+</p>
 
 ---
 
