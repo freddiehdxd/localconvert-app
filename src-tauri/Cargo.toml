@@ -1,0 +1,48 @@
+[package]
+name = "localconvert"
+version = "1.0.0"
+description = "A privacy-focused local file converter"
+authors = ["LocalConvert"]
+edition = "2021"
+rust-version = "1.70"
+
+[lib]
+name = "localconvert_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["stream"] }
+futures-util = "0.3"
+zip = "0.6"
+dirs = "5"
+which = "6"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+lazy_static = "1.4"
+open = "5"
+lopdf = "0.33"  # MIT licensed PDF manipulation library
+encoding_rs = "0.8"  # MIT/Apache 2.0 text encoding library
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

@@ -1,0 +1,59 @@
+# LocalConvert Project Intelligence
+
+## Project Overview
+LocalConvert is a privacy-focused local file converter built with Tauri v2 + React.
+All conversions happen locally using external tools (FFmpeg, ImageMagick, etc.).
+
+## Key Patterns
+
+### Frontend (React)
+- Use Zustand for state management (store in `src/store/useStore.ts`)
+- Use Framer Motion for animations (AnimatePresence for enter/exit)
+- Use Tailwind CSS with custom colors defined in `tailwind.config.js`
+- Components are in `src/components/`
+- Format definitions in `src/types/formats.ts`
+
+### Backend (Rust/Tauri)
+- Commands defined in `src-tauri/src/commands.rs`
+- Conversion logic in `src-tauri/src/converter.rs`
+- Tool detection in `src-tauri/src/tools.rs`
+- Types in `src-tauri/src/types.rs`
+
+### Coding Standards
+- TypeScript strict mode
+- Async/await for all Tauri commands
+- Motion components for interactive elements
+- Toast notifications for user feedback
+
+## Important Files
+- `src/store/useStore.ts` - Central state management
+- `src/types/formats.ts` - Format definitions and conversions
+- `src-tauri/src/commands.rs` - Tauri command implementations
+- `src-tauri/tauri.conf.json` - Tauri configuration
+
+## Development Commands
+```bash
+npm run tauri dev    # Development mode
+npm run tauri build  # Production build
+```
+
+## External Tool Dependencies
+- FFmpeg (video/audio)
+- ImageMagick (images)
+- LibreOffice (documents)
+- Pandoc (markdown/html)
+- Ghostscript (PDF)
+- Tesseract (OCR)
+- 7-Zip (archives)
+
+## UI Theme
+- Dark mode by default
+- Primary color: accent-600 (#4f46e5)
+- Background: dark-900 (#0d0d0f) to dark-800 (#343541)
+- Text: white/dark-300/dark-400
+
+## User Preferences
+- Always maintain privacy focus (no network for conversions)
+- Keep UI minimal but powerful
+- Provide feedback for all actions
+- Support batch operations
