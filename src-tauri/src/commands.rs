@@ -5,7 +5,7 @@ use crate::converter::{
 };
 use crate::tools::{
     check_tool_installed, detect_gpu_encoders, get_category_for_extension,
-    get_supported_output_formats, get_tool_download_url, TOOLS,
+    get_supported_output_formats, get_tool_download_url, get_tool_path, TOOLS,
 };
 use crate::types::{
     ConversionOptions, ConversionResult, FileInfo, FormatInfo, GpuInfo,
@@ -15,6 +15,20 @@ use crate::pdf_text_editor;
 use std::path::Path;
 use std::process::Command;
 use std::fs;
+
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+/// Helper to create a command with hidden window on Windows
+fn hidden_command(program: &str) -> Command {
+    let mut cmd = Command::new(program);
+    #[cfg(windows)]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    cmd
+}
 
 #[tauri::command]
 pub async fn check_tools() -> Vec<ToolStatus> {
@@ -120,11 +134,11 @@ pub async fn merge_pdfs(input_paths: Vec<String>, output_path: String) -> Result
     
     args.extend(input_paths);
     
-    let output = Command::new("gswin64c")
+    let output = hidden_command(&get_tool_path("gs"))
         .args(&args)
         .output()
         .map_err(|e| format!("Failed to run Ghostscript: {}", e))?;
-    
+
     if output.status.success() {
         Ok(output_path)
     } else {
@@ -148,8 +162,11 @@ pub async fn split_pdf(
     // If specific pages are provided, extract those; otherwise extract all
     if let Some(page_nums) = pages {
         for page in page_nums {
-            let output_path = format!("{}\\{}_{}.pdf", output_dir, stem, page);
-            
+            let output_path = Path::new(&output_dir)
+                .join(format!("{}_{}.pdf", stem, page))
+                .to_string_lossy()
+                .to_string();
+
             let args = vec![
                 "-dNOPAUSE".to_string(),
                 "-dBATCH".to_string(),
@@ -160,8 +177,8 @@ pub async fn split_pdf(
                 format!("-sOutputFile={}", output_path),
                 input_path.clone(),
             ];
-            
-            let output = Command::new("gswin64c")
+
+            let output = hidden_command(&get_tool_path("gs"))
                 .args(&args)
                 .output()
                 .map_err(|e| format!("Failed to split PDF: {}", e))?;
@@ -199,7 +216,7 @@ pub async fn compress_pdf(
         input_path,
     ];
     
-    let output = Command::new("gswin64c")
+    let output = hidden_command(&get_tool_path("gs"))
         .args(&args)
         .output()
         .map_err(|e| format!("Failed to compress PDF: {}", e))?;
@@ -239,7 +256,7 @@ pub async fn rotate_pdf(
         input_path,
     ];
     
-    let output = Command::new("gswin64c")
+    let output = hidden_command(&get_tool_path("gs"))
         .args(&args)
         .output()
         .map_err(|e| format!("Failed to rotate PDF: {}", e))?;
@@ -273,7 +290,7 @@ pub async fn add_watermark(
         input_path.clone(),
     ];
     
-    let output = Command::new("gswin64c")
+    let output = hidden_command(&get_tool_path("gs"))
         .args(&args)
         .output()
         .map_err(|e| format!("Failed to add watermark: {}", e))?;
@@ -303,15 +320,18 @@ pub async fn pdf_to_images(
         .unwrap_or("page")
         .to_string();
     
-    let output_pattern = format!("{}\\{}_%03d.{}", output_dir, stem, output_format);
-    
+    let output_pattern = Path::new(&output_dir)
+        .join(format!("{}_%03d.{}", stem, output_format))
+        .to_string_lossy()
+        .to_string();
+
     let device = match output_format.as_str() {
         "png" => "png16m",
         "jpg" | "jpeg" => "jpeg",
         "tiff" => "tiff24nc",
         _ => "png16m",
     };
-    
+
     let args = vec![
         "-dNOPAUSE".to_string(),
         "-dBATCH".to_string(),
@@ -321,8 +341,8 @@ pub async fn pdf_to_images(
         format!("-sOutputFile={}", output_pattern),
         input_path,
     ];
-    
-    let output = Command::new("gswin64c")
+
+    let output = hidden_command(&get_tool_path("gs"))
         .args(&args)
         .output()
         .map_err(|e| format!("Failed to convert PDF to images: {}", e))?;
@@ -356,7 +376,7 @@ pub async fn images_to_pdf(
     let mut args = input_paths.clone();
     args.push(output_path.clone());
     
-    let output = Command::new("magick")
+    let output = hidden_command(&get_tool_path("magick"))
         .args(&args)
         .output()
         .map_err(|e| format!("Failed to create PDF: {}", e))?;
@@ -516,7 +536,7 @@ pub async fn ocr_pdf(
         input_path.clone(),
     ];
     
-    Command::new("gswin64c")
+    hidden_command(&get_tool_path("gs"))
         .args(&gs_args)
         .output()
         .map_err(|e| format!("Failed to convert PDF for OCR: {}", e))?;
@@ -537,7 +557,7 @@ pub async fn ocr_pdf(
                     "pdf".to_string(),
                 ];
                 
-                Command::new("tesseract")
+                hidden_command(&get_tool_path("tesseract"))
                     .args(&tess_args)
                     .output()
                     .ok();
@@ -564,7 +584,7 @@ pub async fn ocr_pdf(
         ];
         gs_merge_args.extend(ocr_outputs);
         
-        Command::new("gswin64c")
+        hidden_command(&get_tool_path("gs"))
             .args(&gs_merge_args)
             .output()
             .map_err(|e| format!("Failed to merge OCR PDFs: {}", e))?;
@@ -619,7 +639,7 @@ pub async fn get_image_preview(path: String, max_size: Option<u32>) -> Result<St
     let temp_path = std::env::temp_dir().join(format!("preview_{}.jpg", uuid::Uuid::new_v4()));
     
     // Try to create a thumbnail
-    let thumbnail_result = Command::new("magick")
+    let thumbnail_result = hidden_command(&get_tool_path("magick"))
         .args([
             &path,
             "-thumbnail",
@@ -705,7 +725,7 @@ pub async fn extract_archive(
         args.push(format!("-p{}", pwd));
     }
     
-    let output = Command::new("7z")
+    let output = hidden_command(&get_tool_path("7z"))
         .args(&args)
         .output()
         .map_err(|e| format!("Failed to extract archive: {}", e))?;
@@ -758,7 +778,7 @@ pub async fn create_archive(
     args.push(output_path.clone());
     args.extend(input_paths);
     
-    let output = Command::new("7z")
+    let output = hidden_command(&get_tool_path("7z"))
         .args(&args)
         .output()
         .map_err(|e| format!("Failed to create archive: {}", e))?;
@@ -878,7 +898,14 @@ pub async fn get_file_size_estimate(
 
 #[tauri::command]
 pub async fn get_video_duration(path: String) -> Result<f64, String> {
-    let output = Command::new("ffprobe")
+    let ffmpeg_path = get_tool_path("ffmpeg");
+    let ffprobe_path = if cfg!(windows) {
+        ffmpeg_path.replace("ffmpeg.exe", "ffprobe.exe")
+    } else {
+        ffmpeg_path.replace("ffmpeg", "ffprobe")
+    };
+
+    let output = hidden_command(&ffprobe_path)
         .args([
             "-v", "quiet",
             "-print_format", "json",
@@ -918,7 +945,7 @@ pub async fn get_video_thumbnail(
     
     let temp_path = std::env::temp_dir().join(format!("thumb_{}.jpg", uuid::Uuid::new_v4()));
     
-    let output = Command::new("ffmpeg")
+    let output = hidden_command(&get_tool_path("ffmpeg"))
         .args([
             "-ss", &time.to_string(),
             "-i", &path,

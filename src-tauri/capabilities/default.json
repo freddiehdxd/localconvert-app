@@ -12,6 +12,9 @@
     "core:window:allow-start-dragging",
     "shell:allow-open",
     "shell:allow-execute",
+    "shell:allow-spawn",
+    "shell:allow-stdin-write",
+    "shell:allow-kill",
     "dialog:default",
     "dialog:allow-open",
     "dialog:allow-save",
@@ -39,6 +42,11 @@
         "$APPLOCALDATA/**",
         "$RESOURCE/**"
       ]
-    }
+    },
+    "notification:default",
+    "notification:allow-notify",
+    "updater:default",
+    "opener:default",
+    "process:default"
   ]
 }

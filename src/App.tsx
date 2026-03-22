@@ -99,7 +99,24 @@ function App() {
     });
     // Detect GPU encoders
     detectGpu();
-    
+
+    // Check for app updates
+    const checkForUpdates = async () => {
+      try {
+        const { check } = await import("@tauri-apps/plugin-updater");
+        const { relaunch } = await import("@tauri-apps/plugin-process");
+        const update = await check();
+        if (update) {
+          console.log(`Update available: ${update.version}`);
+          await update.downloadAndInstall();
+          await relaunch();
+        }
+      } catch (error) {
+        console.log("Update check skipped:", error);
+      }
+    };
+    checkForUpdates();
+
     // Check for startup files (from context menu or drag-drop to app icon)
     const loadStartupFiles = async () => {
       try {

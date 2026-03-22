@@ -50,8 +50,14 @@ pub fn set_app_handle(handle: AppHandle) {
 pub fn get_media_duration(input_path: &str) -> Option<f64> {
     // ffprobe is typically in the same directory as ffmpeg
     let ffmpeg_path = get_tool_path("ffmpeg");
-    let ffprobe_path = if ffmpeg_path.contains("ffmpeg") {
-        ffmpeg_path.replace("ffmpeg.exe", "ffprobe.exe").replace("ffmpeg", "ffprobe")
+    let ffprobe_path = if cfg!(windows) {
+        if ffmpeg_path.contains("ffmpeg.exe") {
+            ffmpeg_path.replace("ffmpeg.exe", "ffprobe.exe")
+        } else {
+            "ffprobe.exe".to_string()
+        }
+    } else if ffmpeg_path.contains("ffmpeg") {
+        ffmpeg_path.replace("ffmpeg", "ffprobe")
     } else {
         "ffprobe".to_string()
     };
@@ -604,7 +610,7 @@ fn convert_document(
                 input.to_string(),
             ];
             
-            return run_command_with_job_id("gswin64c", &args, job_id, None)
+            return run_command_with_job_id("gs", &args, job_id, None)
                 .map(|_| output.to_string());
         }
         
@@ -955,7 +961,7 @@ fn convert_vector(
             input.to_string(),
         ];
         
-        return run_command_with_job_id("gswin64c", &args, job_id, None)
+        return run_command_with_job_id("gs", &args, job_id, None)
             .map(|_| output.to_string());
     }
     

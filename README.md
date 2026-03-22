@@ -1,10 +1,10 @@
-# LocalConvert - Privacy-First Local File Converter for Windows
+# LocalConvert - Privacy-First Local File Converter
 
 A powerful, privacy-focused file converter that runs entirely on your device. Convert videos, audio, images, documents, and more without uploading anything to the cloud. Your files never leave your computer.
 
 ![LocalConvert](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
-![License](https://img.shields.io/badge/license-Source--Available-orange.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 <p align="center">
   <img src="docs/screenshots/main-interface.png" alt="LocalConvert Main Interface" width="800">
@@ -17,10 +17,49 @@ A powerful, privacy-focused file converter that runs entirely on your device. Co
 Unlike cloud-based converters (CloudConvert, Zamzar, Online-Convert), LocalConvert:
 
 - **Never uploads your files** - All processing happens locally
-- **Works completely offline** - No internet required after setup  
+- **Works completely offline** - No internet required after setup
 - **No file size limits** - Convert files of any size
-- **No subscription fees** - Free and open-source
+- **No subscription fees** - Free and open-source (MIT)
 - **Professional quality** - Uses the same engines as industry tools
+- **Cross-platform** - Runs on Windows, macOS, and Linux
+
+---
+
+## Downloads
+
+### Pre-built Installers
+
+Download the latest release for your platform from [GitHub Releases](https://github.com/freddiehdxd/localconvert-app/releases):
+
+| Platform | Download |
+|----------|----------|
+| **Windows** | `.exe` installer (recommended) or `.msi` |
+| **macOS (Apple Silicon)** | `.dmg` for M1/M2/M3/M4 Macs |
+| **macOS (Intel)** | `.dmg` for Intel Macs |
+| **Linux** | `.AppImage` (universal) or `.deb` (Debian/Ubuntu) |
+
+### Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/freddiehdxd/localconvert-app.git
+cd localconvert-app
+
+# Install dependencies
+npm install
+
+# Run in development mode
+npm run tauri dev
+
+# Build for production
+npm run tauri build
+```
+
+#### Build Prerequisites
+
+- [Rust](https://rustup.rs/) (stable)
+- [Node.js](https://nodejs.org/) (v18 or later)
+- **Linux only**: `sudo apt-get install libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
 
 ---
 
@@ -104,7 +143,7 @@ Comprehensive PDF editing capabilities:
 - **PDF Merge** - Combine multiple PDFs into one
 - **PDF Split** - Extract pages or split into multiple files
 - **PDF Compress** - Reduce file size for email
-- **PDF Rotate** - Rotate pages 90°, 180°, or 270°
+- **PDF Rotate** - Rotate pages 90, 180, or 270 degrees
 - **Form Field Editing** - Fill and edit PDF forms
 - **Page Thumbnails** - Visual page navigation
 
@@ -129,126 +168,20 @@ Side-by-side image comparison with:
 
 Faster video conversions with hardware encoding:
 
-- NVIDIA NVENC support (GTX 600+ series)
-- AMD VCE/VCN support
-- Intel Quick Sync support
+- **NVIDIA NVENC** support (GTX 600+ series)
+- **AMD AMF** support (VCE/VCN)
+- **Intel Quick Sync** support
+- **Apple VideoToolbox** support (macOS)
 - Automatic GPU detection
-- Fall back to CPU when GPU unavailable
+- Falls back to CPU when GPU unavailable
 
-### Conversion Presets
+### Auto-Updater
 
-One-click presets for common use cases:
-
-**Video Presets:**
-- Web Optimized (smaller file size for streaming)
-- YouTube Upload (optimal settings for YouTube)
-- Instagram Story (9:16 vertical video)
-- Twitter/X Video (under 512MB)
-- Discord (<8MB for free tier)
-- GIF Conversion (video to animated GIF)
-
-**Audio Presets:**
-- Podcast (mono MP3, 128kbps)
-- Music HQ (lossless FLAC)
-- Voice Memo (small file size)
-
-**Image Presets:**
-- Web Optimized (WebP for fast loading)
-- Social Media (JPEG optimized for sharing)
-- Print Quality (high-quality PNG)
-- Thumbnail (small preview images)
-
-**Document Presets:**
-- PDF Compressed (smaller for email)
-- PDF Print Ready (high quality for printing)
-
-### Device-Specific Presets
-
-Optimized settings for specific devices:
-
-- iPhone (1080p H.264 for iOS)
-- Android (720p for broad compatibility)
-- PlayStation 5 (4K HDR compatible)
-- Xbox Series X (4K compatible)
-- Roku (all Roku devices)
-- Chromecast (optimized streaming)
-
-### Drag-and-Drop Queue Management
-
-Intuitive file management:
-
-- Drag to reorder conversion queue
-- Remove individual files
-- Clear all files at once
-- Filter by file category
-- Visual status indicators
-
-### Real-Time Progress & ETA
-
-Monitor your conversions:
-
-- Live progress percentage
-- Estimated time remaining (ETA)
-- Processing speed display
-- Individual file progress tracking
-- Cancel conversions anytime
-
-<p align="center">
-  <img src="docs/screenshots/conversion-progress.png" alt="Conversion Progress" width="700">
-</p>
-
-### Output Filename Templates
-
-Customize output file names with variables:
-
-- `{name}` - Original filename
-- `{date}` - Current date
-- `{time}` - Current time  
-- `{quality}` - Quality setting
-- Combine variables as needed
-
-### Custom FFmpeg Parameters
-
-Advanced users can add custom FFmpeg parameters:
-
-- Full access to FFmpeg options
-- Override default encoding settings
-- Fine-tune compression
-- Add filters and effects
-
-### Keyboard Shortcuts
-
-Fast workflow with keyboard navigation:
-
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+O` | Open files |
-| `Ctrl+A` | Select all files |
-| `Delete` | Remove selected files |
-| `Enter` | Start conversion |
-| `Escape` | Cancel/Close |
-
-### Conversion History
-
-Track all your conversions:
-
-- View past conversions
-- Re-convert with same settings
-- See success/failure status
-- Duration tracking
-
-### Watch Folders (Auto-Convert)
-
-Set up folders for automatic conversion:
-
-- Monitor folders for new files
-- Auto-convert when files are added
-- Configure output format per folder
-- Background processing
+LocalConvert checks for updates automatically on startup and can install them seamlessly. No need to manually download new versions.
 
 ### Windows Context Menu Integration
 
-Right-click to convert:
+Right-click to convert (Windows only):
 
 - "Convert with LocalConvert" in Explorer context menu
 - Quick access from any folder
@@ -262,31 +195,16 @@ Extract text from images and scanned PDFs:
 - Multiple language support
 - Convert scanned documents to searchable PDFs
 
-### Modern Dark & Light Themes
+### More Features
 
-Beautiful, responsive interface:
-
-- Dark theme (default) - easy on the eyes
-- Light theme available
-- Smooth Framer Motion animations
-- Clean, minimal design
-- Accessibility-friendly
-
-### Audio Completion Notification
-
-Know when conversions finish:
-
-- Pleasant completion chime
-- Works in background
-- Toggle on/off in settings
-
-### Privacy Badge Indicator
-
-Always know your files are safe:
-
-- "100% Local" badge
-- Visual privacy confirmation
-- Optional display setting
+- **Conversion Presets** - One-click presets for Web, YouTube, Instagram, Discord, podcasts, and more
+- **Device Presets** - Optimized settings for iPhone, Android, PlayStation 5, Xbox, Roku, Chromecast
+- **Custom FFmpeg Parameters** - Full access to FFmpeg options for advanced users
+- **Output Filename Templates** - Customize output names with `{name}`, `{date}`, `{time}`, `{quality}`
+- **Keyboard Shortcuts** - `Ctrl+O` open, `Ctrl+A` select all, `Enter` convert, `Delete` remove, `Escape` close
+- **Conversion History** - Track and re-run past conversions
+- **Dark & Light Themes** - Beautiful UI with smooth Framer Motion animations
+- **Audio Completion Notification** - Know when conversions finish in the background
 
 ---
 
@@ -342,64 +260,27 @@ LocalConvert uses industry-standard open-source tools. Install the ones you need
 | [Tesseract](https://github.com/tesseract-ocr/tesseract) | OCR text extraction | Images, PDF | Optional |
 | [7-Zip](https://www.7-zip.org/) | Archive operations | Archives | Optional |
 
+LocalConvert automatically detects installed tools and will guide you through installing any that are missing.
+
+### Platform-Specific Installation
+
+**macOS (Homebrew):**
+```bash
+brew install ffmpeg imagemagick ghostscript tesseract pandoc p7zip
+brew install --cask libreoffice
+```
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt-get install ffmpeg imagemagick ghostscript tesseract-ocr pandoc p7zip-full libreoffice
+```
+
+**Windows:**
+Download installers from each tool's website, or use the in-app tool setup to open download pages.
+
 <p align="center">
   <img src="docs/screenshots/tools-setup.png" alt="Tools Setup" width="600">
 </p>
-
----
-
-## Installation
-
-### Prerequisites
-
-1. Install [Rust](https://rustup.rs/) (for building from source)
-2. Install [Node.js](https://nodejs.org/) (v18 or later)
-3. Install required conversion tools (FFmpeg, ImageMagick)
-
-### Build from Source
-
-```bash
-# Clone the repository
-git clone https://github.com/freddiehdxd/localconvert-app.git
-cd localconvert-app
-
-# Install dependencies
-npm install
-
-# Run in development mode
-npm run tauri dev
-
-# Build for production
-npm run tauri build
-```
-
----
-
-## Usage
-
-### Basic Conversion
-
-1. **Drop files** onto the drop zone or click to browse
-2. **Select output format** for each file or all files at once
-3. **Adjust quality** if desired (optional)
-4. **Click Convert** to start the conversion
-5. **Find your files** in the output directory (default: Downloads)
-
-### Video Trimming
-
-1. Add a video file to LocalConvert
-2. Click the **scissors icon** on the video card
-3. Use the **timeline** to set start and end points
-4. **Preview** your selection
-5. Click **Trim** to export the trimmed video
-
-### PDF Editing
-
-1. Add a PDF file to LocalConvert
-2. Click the **edit icon** on the PDF card
-3. Use the **toolbar** to select editing tools
-4. Click on text to **edit directly**
-5. Click **Save** to export your changes
 
 ---
 
@@ -410,7 +291,7 @@ npm run tauri build
 - **State Management**: Zustand
 - **Animations**: Framer Motion
 - **Icons**: Lucide React
-- **PDF**: pdf-lib, pdfjs-dist
+- **PDF**: pdf-lib, pdfjs-dist, lopdf (Rust)
 
 ---
 
@@ -428,12 +309,15 @@ localconvert/
 │   ├── types/              # TypeScript types
 │   └── utils/              # Utility functions
 ├── src-tauri/              # Rust backend
-│   └── src/
-│       ├── commands.rs     # Tauri IPC commands
-│       ├── converter.rs    # Conversion logic
-│       ├── tools.rs        # Tool detection
-│       └── types.rs        # Rust types
-└── public/                 # Static assets
+│   ├── src/
+│   │   ├── lib.rs          # App setup & plugin registration
+│   │   ├── commands.rs     # Tauri IPC commands
+│   │   ├── converter.rs    # Conversion logic
+│   │   ├── tools.rs        # Cross-platform tool detection
+│   │   ├── types.rs        # Rust types
+│   │   └── pdf_text_editor.rs  # Pure Rust PDF editing
+│   └── capabilities/       # Tauri v2 permissions
+└── .github/workflows/     # CI/CD for cross-platform releases
 ```
 
 ---
@@ -452,24 +336,21 @@ npm run tauri build
 # Run frontend only
 npm run dev
 
-# Type checking
-npm run typecheck
+# Build frontend only
+npm run build
 ```
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting a pull request.
+Contributions are welcome! Please submit issues and pull requests on GitHub.
 
 ---
 
 ## License
 
-This project is **source-available** for personal and research use only.  
-**Commercial use requires a separate license.**
-
-See [LICENSE](LICENSE) for full details.
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
@@ -480,6 +361,7 @@ See [LICENSE](LICENSE) for full details.
 - [ImageMagick](https://imagemagick.org/) - Image processing
 - [LibreOffice](https://www.libreoffice.org/) - Document conversion
 - [Pandoc](https://pandoc.org/) - Universal document converter
+- [Ghostscript](https://ghostscript.com/) - PDF processing
 - [Tesseract](https://github.com/tesseract-ocr/tesseract) - OCR engine
 - [Lucide](https://lucide.dev/) - Beautiful icons
 - [pdf-lib](https://pdf-lib.js.org/) - PDF manipulation
@@ -488,4 +370,4 @@ See [LICENSE](LICENSE) for full details.
 
 ## Keywords
 
-file converter, video converter, audio converter, image converter, document converter, PDF editor, offline converter, privacy file converter, local file converter, batch converter, video trimmer, format converter, MP4 converter, WebM converter, HEIC converter, RAW converter, FFmpeg GUI, ImageMagick GUI, Windows file converter, free file converter, open source converter
+file converter, video converter, audio converter, image converter, document converter, PDF editor, offline converter, privacy file converter, local file converter, batch converter, video trimmer, format converter, MP4 converter, WebM converter, HEIC converter, RAW converter, FFmpeg GUI, ImageMagick GUI, cross-platform file converter, free file converter, open source converter, Windows converter, macOS converter, Linux converter
