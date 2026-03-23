@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
-import { Plus, Trash2, CheckSquare, Square, Upload, GripVertical } from "lucide-react";
+import { Plus, Trash2, CheckSquare, Square, Upload, GripVertical, Layers } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { useStore } from "../store/useStore";
@@ -78,68 +78,87 @@ export function FileList() {
   }, [addFiles]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col relative z-10 glass-panel-heavy rounded-2xl overflow-hidden shadow-lg border-0 w-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-4">
-          <h2 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
-            {activeCategory === "all" ? "All Files" : `${activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)} Files`}
+      <div className={`p-5 flex items-center justify-between border-b ${isDark ? "border-dark-700/50" : "border-dark-100/50"}`}>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-brand/10 text-brand flex items-center justify-center shrink-0">
+            <Layers className="w-4 h-4" />
+          </div>
+          <h2 className={`text-[15px] font-bold tracking-wide uppercase ${isDark ? "text-white" : "text-dark-900"}`}>
+            {activeCategory === "all" ? "All Queue" : `${activeCategory} Queue`}
           </h2>
-          <span className={`px-2 py-0.5 rounded-full text-sm ${
-            isDark ? "bg-dark-700 text-dark-300" : "bg-gray-200 text-gray-600"
+          <span className={`ml-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-widest ${
+            isDark ? "bg-dark-800 text-dark-400 border border-dark-700" : "bg-white text-dark-500 border border-dark-100 shadow-sm"
           }`}>
-            {filteredFiles.length} file{filteredFiles.length !== 1 ? "s" : ""}
+            {filteredFiles.length} ITEM{filteredFiles.length !== 1 ? "S" : ""}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <motion.button
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
               isDark
-                ? "bg-dark-700 hover:bg-dark-600 text-dark-300 hover:text-white"
-                : "bg-gray-200 hover:bg-gray-300 text-gray-600 hover:text-gray-900"
+                ? "bg-dark-800/40 border-dark-700 hover:border-dark-600 text-dark-300 hover:text-white"
+                : "bg-white/60 border-dark-100 hover:border-dark-200 text-dark-600 hover:text-dark-900"
             }`}
             onClick={() => (allSelected ? deselectAllFiles() : selectAllFiles())}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            disabled={filteredFiles.length === 0}
           >
             {allSelected ? (
-              <CheckSquare className="w-4 h-4" />
+              <CheckSquare className="w-3.5 h-3.5 text-brand" />
             ) : (
-              <Square className="w-4 h-4" />
+              <Square className="w-3.5 h-3.5" />
             )}
-            {allSelected ? "Deselect All" : "Select All"}
+            {allSelected ? "DESELECT" : "SELECT ALL"}
           </motion.button>
+          
+          <div className={`w-px h-6 mx-1 ${isDark ? "bg-dark-700/50" : "bg-dark-200/50"}`}></div>
+
           <motion.button
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
               isDark
-                ? "bg-dark-700 hover:bg-dark-600 text-dark-300 hover:text-white"
-                : "bg-gray-200 hover:bg-gray-300 text-gray-600 hover:text-gray-900"
+                ? "bg-brand/10 border-brand/20 hover:border-brand/40 text-brand hover:bg-brand/20"
+                : "bg-brand/5 border-brand/20 hover:border-brand/40 text-brand hover:bg-brand/10"
             }`}
             onClick={handleAddMore}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Plus className="w-4 h-4" />
-            Add More
+            <Plus className="w-3.5 h-3.5" />
+            ADD
           </motion.button>
           <motion.button
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-error-600/20 hover:bg-error-600/30 text-error-500 text-sm transition-colors"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+              isDark
+                ? "bg-error-500/10 border-error-500/20 hover:border-error-500/40 text-error-500 hover:bg-error-500/20"
+                : "bg-error-500/5 border-error-500/20 hover:border-error-500/40 text-error-500 hover:bg-error-500/10"
+            }`}
             onClick={clearFiles}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            disabled={filteredFiles.length === 0}
           >
-            <Trash2 className="w-4 h-4" />
-            Clear All
+            <Trash2 className="w-3.5 h-3.5" />
+            CLEAR
           </motion.button>
         </div>
       </div>
 
       {/* File Grid */}
-      <div className="flex-1 overflow-y-auto pr-2">
+      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
         {filteredFiles.length === 0 ? (
-          <div className={`h-full flex flex-col items-center justify-center ${isDark ? "text-dark-400" : "text-gray-400"}`}>
-            <Upload className="w-12 h-12 mb-4 opacity-50" />
-            <p>No {activeCategory === "all" ? "" : activeCategory + " "}files added yet</p>
+          <div className="h-full flex flex-col items-center justify-center opacity-70">
+            <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 border-2 border-dashed ${
+              isDark ? "bg-dark-800/50 border-dark-700" : "bg-white/50 border-dark-200"
+            }`}>
+              <Upload className={`w-10 h-10 ${isDark ? "text-dark-500" : "text-dark-400"}`} />
+            </div>
+            <p className={`text-lg font-bold tracking-wide ${isDark ? "text-dark-400" : "text-dark-500"}`}>Queue is empty</p>
+            <p className={`text-sm mt-2 ${isDark ? "text-dark-500" : "text-dark-400"}`}>
+              {activeCategory === "all" ? "Add files to start converting" : `Add ${activeCategory} files to begin`}
+            </p>
           </div>
         ) : (
           <Reorder.Group 
@@ -153,22 +172,22 @@ export function FileList() {
                 <Reorder.Item
                   key={file.id}
                   value={file}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -100 }}
-                  transition={{ delay: index * 0.02 }}
-                  className="relative group"
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, height: 0, overflow: 'hidden' }}
+                  transition={{ delay: index * 0.02, type: 'spring', stiffness: 400, damping: 30 }}
+                  className="relative group outline-none"
                   whileDrag={{ 
                     scale: 1.02, 
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+                    boxShadow: isDark ? "0 10px 30px rgba(0,0,0,0.5)" : "0 10px 30px rgba(0,0,0,0.1)",
                     zIndex: 10 
                   }}
                 >
                   {/* Drag Handle Indicator */}
-                  <div className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 opacity-0 group-hover:opacity-100 transition-opacity ${
-                    isDark ? "text-dark-500" : "text-gray-400"
+                  <div className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 opacity-0 group-hover:opacity-100 transition-all z-10 p-1 cursor-grab active:cursor-grabbing ${
+                    isDark ? "text-dark-500 hover:text-white" : "text-dark-300 hover:text-dark-900"
                   }`}>
-                    <GripVertical className="w-4 h-4" />
+                    <GripVertical className="w-5 h-5 drop-shadow-sm" />
                   </div>
                   <FileCard file={file} />
                 </Reorder.Item>
@@ -179,11 +198,23 @@ export function FileList() {
       </div>
 
       {/* Drag hint */}
-      {filteredFiles.length > 1 && (
-        <p className={`text-xs text-center mt-2 ${isDark ? "text-dark-500" : "text-gray-400"}`}>
-          Drag files to reorder conversion queue
-        </p>
-      )}
+      <AnimatePresence>
+        {filteredFiles.length > 1 && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className={`py-2 px-4 text-center border-t backdrop-blur-md ${
+              isDark ? "bg-dark-800/40 border-dark-700/50 text-dark-500" : "bg-white/40 border-dark-100 text-dark-400"
+            }`}
+          >
+            <p className="text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+              <GripVertical className="w-3 h-3" />
+              Drag files to reorder priority
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

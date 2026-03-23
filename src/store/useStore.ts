@@ -31,6 +31,11 @@ export interface FileInfo {
   extension: string;
   size: number;
   category: string;
+  duration?: number;
+  thumbnail?: string;
+  resolution?: string;
+  codec?: string;
+  subtitles?: { index: number; language?: string; codec?: string; title?: string }[];
 }
 
 export interface ConversionFile extends FileInfo {
@@ -61,13 +66,32 @@ export interface ConversionOptions {
   width?: number;
   height?: number;
   bitrate?: string;
-  fps?: number;
+  fps?: number | string;
   preserveMetadata?: boolean;
   startTime?: string;
   endTime?: string;
   compressionLevel?: number;
   useGpu?: boolean;
   gpuEncoder?: string;
+  
+  // Advanced Video Settings
+  presetResolution?: string;
+  customWidth?: number;
+  customHeight?: number;
+  videoCodec?: string;
+  audioCodec?: string;
+  bitrateMode?: "CBR" | "VBR";
+  videoBitrate?: number; // In Mbps
+  crf?: number; // 0-51
+  twoPass?: boolean;
+  // Advanced Audio & Subtitles
+  maintainAspectRatio?: boolean;
+  audioBitrateKbps?: number;
+  audioSampleRate?: string;
+  volumeDb?: number;
+  channelLayout?: string;
+  subtitleAction?: string;
+  subtitleStreamIndex?: number | null;
 }
 
 export interface GpuEncoder {
@@ -110,6 +134,26 @@ export interface Settings {
   watchFolders: string[];
   contextMenuEnabled: boolean;
   customFfmpegParams: string;
+  // Advanced Video Settings
+  presetResolution: string;
+  customWidth: number;
+  customHeight: number;
+  videoCodec: string;
+  audioCodec: string;
+  bitrateMode: "CBR" | "VBR";
+  videoBitrate: number; // Mbps
+  crf: number; // 0-51
+  fps: string;
+  twoPass: boolean;
+  // Advanced Audio & Subtitle Settings
+  maintainAspectRatio: boolean;
+  audioBitrateKbps: number;
+  audioSampleRate: string;
+  volumeDb: number;
+  channelLayout: string;
+  hwAcceleratorEnabled: boolean;
+  subtitleAction: string;
+  subtitleStreamIndex: number | null;
 }
 
 export interface ConversionPreset {
@@ -447,6 +491,43 @@ export const useStore = create<Store>((set, get) => ({
             ),
           }));
         });
+      } else if (file.category === "video") {
+        // Fetch metadata
+        invoke<{
+          duration: number | null;
+          resolution: string | null;
+          codec: string | null;
+        }>("get_video_metadata", { path: file.path })
+          .then((meta) => {
+            set((state) => ({
+              files: state.files.map((f) =>
+                f.id === file.id
+                  ? {
+                      ...f,
+                      duration: meta.duration ?? f.duration,
+                      resolution: meta.resolution ?? f.resolution,
+                      codec: meta.codec ?? f.codec,
+                    }
+                  : f
+              ),
+            }));
+          })
+          .catch((err) => console.error("Failed to load video metadata:", err));
+
+        // Fetch thumbnail
+        invoke<string>("get_video_thumbnail", {
+          path: file.path,
+          timeSecs: 1.0,
+          width: 320,
+        })
+          .then((thumbnail) => {
+            set((state) => ({
+              files: state.files.map((f) =>
+                f.id === file.id ? { ...f, thumbnail } : f
+              ),
+            }));
+          })
+          .catch((err) => console.error("Failed to load video thumbnail:", err));
       }
     });
   },
@@ -807,13 +888,32 @@ export const useStore = create<Store>((set, get) => ({
     gpuEncoder: null,
     parallelProcessing: true,
     maxParallelConversions: 4,
-    // New settings
     playCompletionSound: true,
     showPrivacyBadge: true,
-    outputFilenameTemplate: "{name}",
+    outputFilenameTemplate: "{name}_{preset}",
     watchFolders: [],
     contextMenuEnabled: false,
     customFfmpegParams: "",
+    // Advanced Video Settings Defaults
+    presetResolution: "Match Source",
+    customWidth: 1920,
+    customHeight: 1080,
+    videoCodec: "H.264",
+    audioCodec: "AAC",
+    bitrateMode: "VBR",
+    videoBitrate: 8,
+    crf: 23,
+    fps: "Match Source",
+    twoPass: false,
+    // Advanced Audio & Subtitle Settings
+    maintainAspectRatio: true,
+    audioBitrateKbps: 192,
+    audioSampleRate: "Match Source",
+    volumeDb: 0,
+    channelLayout: "Auto",
+    hwAcceleratorEnabled: false,
+    subtitleAction: "No Change",
+    subtitleStreamIndex: null,
   },
 
   updateSettings: (newSettings) => {

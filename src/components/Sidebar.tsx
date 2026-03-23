@@ -41,16 +41,14 @@ export function Sidebar() {
   };
 
   return (
-    <aside className={`w-56 border-r flex flex-col transition-colors ${
-      isDark ? "border-dark-700 bg-dark-900/30" : "border-gray-200 bg-white/50"
-    }`}>
-      <div className="p-4">
-        <h2 className={`text-xs font-semibold uppercase tracking-wider mb-3 ${
-          isDark ? "text-dark-400" : "text-gray-500"
+    <aside className="w-64 h-full flex flex-col glass-panel rounded-2xl border-0 shadow-lg overflow-hidden z-10 relative">
+      <div className="p-5 flex-1 overflow-y-auto custom-scrollbar">
+        <h2 className={`text-xs font-bold uppercase tracking-widest mb-4 pl-2 ${
+          isDark ? "text-dark-500" : "text-dark-400"
         }`}>
           Categories
         </h2>
-        <nav className="space-y-1">
+        <nav className="space-y-1.5 relative">
           {categories.map(([key, data]) => {
             const Icon = iconMap[data.icon] || Files;
             const count = getCategoryCount(key);
@@ -59,27 +57,36 @@ export function Sidebar() {
             return (
               <motion.button
                 key={key}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden ${
                   isActive
-                    ? "bg-accent-600/20 text-accent-600"
+                    ? "text-white"
                     : isDark
-                      ? "text-dark-300 hover:text-white hover:bg-dark-700/50"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                      ? "text-dark-300 hover:text-white"
+                      : "text-dark-600 hover:text-dark-900 hover:bg-white/50"
                 }`}
                 onClick={() => setActiveCategory(key)}
-                whileHover={{ x: 4 }}
+                whileHover={!isActive ? { x: 4, backgroundColor: isDark ? "rgba(39, 39, 42, 0.4)" : "rgba(255, 255, 255, 0.7)" } : undefined}
                 whileTap={{ scale: 0.98 }}
               >
-                <Icon className={`w-4 h-4 ${isActive ? "text-accent-500" : data.color}`} />
-                <span className="flex-1 text-left">{data.name}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeCategoryBg"
+                    className="absolute inset-0 bg-accent-gradient opacity-90 backdrop-blur-sm -z-10"
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  />
+                )}
+                
+                <Icon className={`w-4 h-4 z-10 ${isActive ? "text-white" : data.color}`} />
+                <span className="flex-1 text-left z-10">{data.name}</span>
+                
                 {count > 0 && (
                   <span
-                    className={`px-2 py-0.5 rounded-full text-xs ${
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold z-10 transition-colors ${
                       isActive
-                        ? "bg-accent-600/30 text-accent-600"
+                        ? "bg-white/20 text-white"
                         : isDark
-                          ? "bg-dark-700 text-dark-400"
-                          : "bg-gray-200 text-gray-500"
+                          ? "bg-dark-800 text-dark-400"
+                          : "bg-dark-100 text-dark-500"
                     }`}
                   >
                     {count}
@@ -92,23 +99,25 @@ export function Sidebar() {
       </div>
 
       {/* Quick Stats */}
-      <div className={`mt-auto p-4 border-t ${isDark ? "border-dark-700" : "border-gray-200"}`}>
-        <div className={`rounded-lg p-3 ${isDark ? "bg-dark-800/50" : "bg-gray-100"}`}>
-          <p className={`text-xs mb-2 ${isDark ? "text-dark-400" : "text-gray-500"}`}>Session Stats</p>
-          <div className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className={isDark ? "text-dark-400" : "text-gray-500"}>Files</span>
-              <span className={`font-medium ${isDark ? "text-white" : "text-gray-900"}`}>{files.length}</span>
+      <div className="p-4 shrink-0">
+        <div className={`rounded-xl p-4 backdrop-blur-md border ${
+          isDark ? "bg-dark-800/40 border-dark-700/50" : "bg-white/40 border-dark-100"
+        }`}>
+          <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${isDark ? "text-dark-500" : "text-dark-400"}`}>Session Stats</p>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className={isDark ? "text-dark-400" : "text-dark-500"}>Files</span>
+              <span className={`font-semibold bg-dark-100/50 dark:bg-dark-800/50 px-2 py-0.5 rounded-md ${isDark ? "text-white" : "text-dark-900"}`}>{files.length}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className={isDark ? "text-dark-400" : "text-gray-500"}>Completed</span>
-              <span className="text-success-500 font-medium">
+            <div className="flex justify-between items-center text-sm">
+              <span className={isDark ? "text-dark-400" : "text-dark-500"}>Completed</span>
+              <span className="text-success-500 font-semibold bg-success-500/10 px-2 py-0.5 rounded-md">
                 {files.filter((f) => f.status === "completed").length}
               </span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className={isDark ? "text-dark-400" : "text-gray-500"}>Errors</span>
-              <span className="text-error-500 font-medium">
+            <div className="flex justify-between items-center text-sm">
+              <span className={isDark ? "text-dark-400" : "text-dark-500"}>Errors</span>
+              <span className="text-error-500 font-semibold bg-error-500/10 px-2 py-0.5 rounded-md">
                 {files.filter((f) => f.status === "error").length}
               </span>
             </div>

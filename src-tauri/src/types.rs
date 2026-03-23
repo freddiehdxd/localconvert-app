@@ -15,6 +15,11 @@ pub struct FileInfo {
     pub extension: String,
     pub size: u64,
     pub category: String,
+    pub duration: Option<f64>,
+    pub thumbnail: Option<String>,
+    pub resolution: Option<String>,
+    pub codec: Option<String>,
+    pub subtitles: Option<Vec<SubtitleStream>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,13 +28,33 @@ pub struct ConversionOptions {
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub bitrate: Option<String>,
-    pub fps: Option<u32>,
+    pub fps: Option<serde_json::Value>,
     pub preserve_metadata: Option<bool>,
     pub start_time: Option<String>,
     pub end_time: Option<String>,
     pub compression_level: Option<u32>,
     pub use_gpu: Option<bool>,
     pub gpu_encoder: Option<String>,
+    
+    // Advanced Video Settings
+    pub preset_resolution: Option<String>,
+    pub custom_width: Option<u32>,
+    pub custom_height: Option<u32>,
+    pub video_codec: Option<String>,
+    pub audio_codec: Option<String>,
+    pub bitrate_mode: Option<String>,
+    pub video_bitrate: Option<f64>,
+    pub crf: Option<u32>,
+    pub two_pass: Option<bool>,
+    
+    // New Audio & Subtitle Settings
+    pub maintain_aspect_ratio: Option<bool>,
+    pub audio_bitrate_kbps: Option<u32>,
+    pub audio_sample_rate: Option<String>,
+    pub volume_db: Option<i32>,
+    pub channel_layout: Option<String>,
+    pub subtitle_action: Option<String>,
+    pub subtitle_stream_index: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -104,10 +129,20 @@ pub struct VideoOptions {
     pub height: Option<u32>,
     pub bitrate: Option<String>,
     pub audio_bitrate: Option<String>,
-    pub fps: Option<u32>,
+    pub fps: Option<serde_json::Value>,
     pub crf: Option<u32>,
     pub use_gpu: Option<bool>,
     pub gpu_encoder: Option<String>,
+    
+    // Advanced Video Settings
+    pub preset_resolution: Option<String>,
+    pub custom_width: Option<u32>,
+    pub custom_height: Option<u32>,
+    pub video_codec: Option<String>,
+    pub audio_codec: Option<String>,
+    pub bitrate_mode: Option<String>,
+    pub video_bitrate: Option<f64>,
+    pub two_pass: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -132,6 +167,38 @@ impl Default for ConversionOptions {
             compression_level: None,
             use_gpu: None,
             gpu_encoder: None,
+            preset_resolution: None,
+            custom_width: None,
+            custom_height: None,
+            video_codec: None,
+            audio_codec: None,
+            bitrate_mode: None,
+            video_bitrate: None,
+            crf: None,
+            two_pass: None,
+            maintain_aspect_ratio: None,
+            audio_bitrate_kbps: None,
+            audio_sample_rate: None,
+            volume_db: None,
+            channel_layout: None,
+            subtitle_action: None,
+            subtitle_stream_index: None,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubtitleStream {
+    pub index: usize,
+    pub language: Option<String>,
+    pub codec: Option<String>,
+    pub title: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VideoMetadata {
+    pub duration: Option<f64>,
+    pub resolution: Option<String>,
+    pub codec: Option<String>,
+    pub subtitles: Vec<SubtitleStream>,
 }

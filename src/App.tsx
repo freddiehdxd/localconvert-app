@@ -145,91 +145,103 @@ function App() {
   const isDark = settings.theme === "dark";
 
   return (
-    <div className={`h-screen w-screen overflow-hidden flex flex-col transition-colors duration-200 ${
-      isDark ? "bg-dark-gradient" : "bg-gradient-to-b from-gray-50 to-gray-100"
+    <div className={`h-screen w-screen overflow-hidden flex flex-col transition-all duration-500 ${
+      isDark ? "bg-dark-gradient text-dark-100" : "bg-light-gradient text-dark-900"
     }`}>
-      <Toaster
-        position="bottom-right"
-        toastOptions={{
-          className: isDark 
-            ? "!bg-dark-700 !text-white !border !border-dark-600"
-            : "!bg-white !text-gray-900 !border !border-gray-200 !shadow-lg",
-          duration: 4000,
-          style: isDark ? {
-            background: "#343541",
-            color: "#fff",
-            border: "1px solid #565869",
-          } : {
-            background: "#fff",
-            color: "#111827",
-            border: "1px solid #e5e7eb",
-          },
-          success: {
-            iconTheme: {
-              primary: "#22c55e",
-              secondary: isDark ? "#fff" : "#fff",
+      {/* Decorative background blur blobs */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className={`absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full mix-blend-screen filter blur-[100px] opacity-30 animate-pulse-slow ${isDark ? 'bg-indigo-900' : 'bg-indigo-200'}`}></div>
+        <div className={`absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full mix-blend-screen filter blur-[120px] opacity-20 animate-pulse-slow ${isDark ? 'bg-purple-900' : 'bg-purple-200'}`} style={{ animationDelay: '2s' }}></div>
+      </div>
+
+      <div className="relative z-10 flex flex-col h-full w-full">
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            className: isDark 
+              ? "!bg-dark-800 !text-white !border !border-dark-600 !shadow-2xl !shadow-black/50 !backdrop-blur-md"
+              : "!bg-white/90 !text-dark-900 !border !border-dark-200 !shadow-xl !backdrop-blur-md",
+            duration: 4000,
+            style: isDark ? {
+              background: "rgba(24, 24, 27, 0.8)",
+              color: "#fff",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+            } : {
+              background: "rgba(255, 255, 255, 0.9)",
+              color: "#09090b",
+              border: "1px solid rgba(9, 9, 11, 0.1)",
             },
-          },
-          error: {
-            iconTheme: {
-              primary: "#ef4444",
-              secondary: isDark ? "#fff" : "#fff",
+            success: {
+              iconTheme: {
+                primary: "#22c55e",
+                secondary: "#fff",
+              },
             },
-          },
-        }}
-      />
+            error: {
+              iconTheme: {
+                primary: "#ef4444",
+                secondary: "#fff",
+              },
+            },
+          }}
+        />
 
-      {/* Header */}
-      <Header
-        onSettingsClick={() => setShowSettings(true)}
-        onHistoryClick={() => setShowHistory(true)}
-        onToolsClick={() => setShowTools(true)}
-        onHelpClick={() => setShowTools(true)}
-      />
+        {/* Header */}
+        <div className="px-4 pt-4 shrink-0">
+          <Header
+            onSettingsClick={() => setShowSettings(true)}
+            onHistoryClick={() => setShowHistory(true)}
+            onToolsClick={() => setShowTools(true)}
+            onHelpClick={() => setShowTools(true)}
+          />
+        </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar />
+        {/* Main Content */}
+        <div className="flex-1 flex overflow-hidden p-4 gap-4">
+          {/* Sidebar */}
+          <div className="shrink-0">
+            <Sidebar />
+          </div>
 
-        {/* Main Area */}
-        <main className="flex-1 flex flex-col overflow-hidden p-6">
-          <AnimatePresence mode="wait">
-            {files.length === 0 ? (
-              <motion.div
-                key="dropzone"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-                className="flex-1 flex items-center justify-center"
-              >
-                <FileDropZone />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="filelist"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="flex-1 flex flex-col overflow-hidden"
-              >
-                <div className="flex-1 overflow-hidden flex gap-6">
-                  {/* File List */}
-                  <div className="flex-1 overflow-hidden">
-                    <FileList />
+          {/* Main Area */}
+          <main className="flex-1 flex flex-col overflow-hidden glass-panel rounded-2xl border-0 shadow-xl relative animate-fadeIn group">
+            <AnimatePresence mode="wait">
+              {files.length === 0 ? (
+                <motion.div
+                  key="dropzone"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="absolute inset-0 flex items-center justify-center p-6"
+                >
+                  <FileDropZone />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="filelist"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="absolute inset-0 flex flex-col overflow-hidden p-6"
+                >
+                  <div className="flex-1 overflow-hidden flex gap-6">
+                    {/* File List */}
+                    <div className="flex-1 overflow-hidden">
+                      <FileList />
+                    </div>
+
+                    {/* Conversion Panel */}
+                    <div className="w-80 flex-shrink-0 flex flex-col h-full rounded-xl">
+                      <ConversionPanel />
+                    </div>
                   </div>
-
-                  {/* Conversion Panel */}
-                  <div className="w-80 flex-shrink-0">
-                    <ConversionPanel />
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </main>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </main>
+        </div>
       </div>
 
       {/* Modals */}

@@ -861,15 +861,15 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 
   return (
     <motion.div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-dark-gradient/80 backdrop-blur-xl flex items-center justify-center z-[100] p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
     >
       <motion.div
-        className={`rounded-2xl border w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] ${
-          isDark ? "bg-dark-800 border-dark-700" : "bg-white border-gray-200"
+        className={`rounded-[32px] border w-full max-w-xl overflow-hidden glass-panel-heavy shadow-glow-strong flex flex-col max-h-[85vh] ${
+          isDark ? "border-dark-600/50" : "border-white/50"
         }`}
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -918,10 +918,10 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
             Cancel
           </motion.button>
           <motion.button
-            className="px-5 py-2 rounded-xl bg-accent-gradient text-white font-medium flex items-center gap-2 text-sm"
+            className="px-6 py-2.5 rounded-xl bg-accent-gradient text-white font-bold tracking-wide shadow-glow btn-glow flex items-center gap-2 text-sm"
             onClick={handleSave}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <Save className="w-4 h-4" />
             Save Changes

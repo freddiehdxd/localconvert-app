@@ -11,7 +11,7 @@ import {
   Check,
   ChevronDown,
 } from "lucide-react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import toast from "react-hot-toast";
 import { useStore } from "../store/useStore";
 
@@ -197,7 +197,7 @@ export function VideoTrimmer({ filePath, onClose, onTrim }: VideoTrimmerProps) {
         <div className="relative bg-black aspect-video">
           <video
             ref={videoRef}
-            src={`file://${filePath}`}
+            src={convertFileSrc(filePath)}
             className="w-full h-full"
             muted={isMuted}
             onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}

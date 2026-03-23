@@ -62,6 +62,8 @@ pub fn run() {
             commands::get_file_size_estimate,
             commands::get_video_duration,
             commands::get_video_thumbnail,
+            commands::get_video_metadata,
+            commands::get_hardware_encoders,
             commands::register_context_menu,
             commands::unregister_context_menu,
             commands::get_startup_files,

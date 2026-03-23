@@ -103,6 +103,11 @@ pub async fn get_file_info(path: String) -> Result<FileInfo, String> {
         extension,
         size: metadata.len(),
         category,
+        duration: None,
+        thumbnail: None,
+        resolution: None,
+        codec: None,
+        subtitles: None,
     })
 }
 
@@ -470,6 +475,14 @@ pub async fn trim_video(
         crf: None,
         use_gpu: None,
         gpu_encoder: None,
+        preset_resolution: None,
+        custom_width: None,
+        custom_height: None,
+        video_codec: None,
+        audio_codec: None,
+        bitrate_mode: None,
+        video_bitrate: None,
+        two_pass: None,
     };
     
     trim_video_helper(&input_path, &output_path, &options)
@@ -502,6 +515,14 @@ pub async fn compress_video(
         crf,
         use_gpu: None,
         gpu_encoder: None,
+        preset_resolution: None,
+        custom_width: None,
+        custom_height: None,
+        video_codec: None,
+        audio_codec: None,
+        bitrate_mode: None,
+        video_bitrate: None,
+        two_pass: None,
     };
     
     compress_video_helper(&input_path, &output_path, &options)
@@ -971,6 +992,85 @@ pub async fn get_video_thumbnail(
     
     let base64 = base64_encode(&buffer);
     Ok(format!("data:image/jpeg;base64,{}", base64))
+}
+
+#[tauri::command]
+pub async fn get_video_metadata(path: String) -> Result<crate::types::VideoMetadata, String> {
+    let ffmpeg_path = get_tool_path("ffmpeg");
+    let ffprobe_path = if cfg!(windows) {
+        ffmpeg_path.replace("ffmpeg.exe", "ffprobe.exe")
+    } else {
+        ffmpeg_path.replace("ffmpeg", "ffprobe")
+    };
+
+    let output = hidden_command(&ffprobe_path)
+        .args([
+            "-v", "quiet",
+            "-print_format", "json",
+            "-show_format",
+            "-show_streams",
+            &path,
+        ])
+        .output()
+        .map_err(|e| format!("Failed to get video metadata: {}", e))?;
+    
+    let mut metadata = crate::types::VideoMetadata {
+        duration: None,
+        resolution: None,
+        codec: None,
+        subtitles: Vec::new(),
+    };
+    
+    if output.status.success() {
+        if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&output.stdout) {
+            if let Some(format) = json.get("format") {
+                if let Some(dur_str) = format.get("duration").and_then(|v| v.as_str()) {
+                    metadata.duration = dur_str.parse::<f64>().ok();
+                }
+            }
+            if let Some(streams) = json.get("streams").and_then(|v| v.as_array()) {
+                if let Some(video_stream) = streams.iter().find(|s| s.get("codec_type").and_then(|v| v.as_str()) == Some("video")) {
+                    if let Some(c) = video_stream.get("codec_name").and_then(|v| v.as_str()) {
+                        metadata.codec = Some(c.to_uppercase());
+                    }
+                    if let (Some(w), Some(h)) = (
+                        video_stream.get("width").and_then(|v| v.as_i64()),
+                        video_stream.get("height").and_then(|v| v.as_i64())
+                    ) {
+                        metadata.resolution = Some(format!("{}x{}", w, h));
+                    }
+                }
+                
+                // Parse subtitle streams
+                for stream in streams.iter().filter(|s| s.get("codec_type").and_then(|v| v.as_str()) == Some("subtitle")) {
+                    let index = stream.get("index").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+                    let codec = stream.get("codec_name").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    
+                    let mut language = None;
+                    let mut title = None;
+                    
+                    if let Some(tags) = stream.get("tags") {
+                        language = tags.get("language").and_then(|v| v.as_str()).map(|s| s.to_string());
+                        title = tags.get("title").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    }
+                    
+                    metadata.subtitles.push(crate::types::SubtitleStream {
+                        index,
+                        language,
+                        codec,
+                        title,
+                    });
+                }
+            }
+        }
+    }
+    
+    Ok(metadata)
+}
+
+#[tauri::command]
+pub async fn get_hardware_encoders() -> Result<crate::types::GpuInfo, String> {
+    Ok(crate::tools::detect_gpu_encoders())
 }
 
 #[tauri::command]

@@ -259,10 +259,31 @@ fn convert_video(
     // Get video duration for progress tracking
     let duration = get_media_duration(input);
     
+    if format == "gif" {
+        let mut gif_args: Vec<String> = vec![
+            "-i".to_string(),
+            input.to_string(),
+            "-y".to_string(), 
+        ];
+        if let Some(ref start) = options.start_time {
+            gif_args.insert(0, start.clone());
+            gif_args.insert(0, "-ss".to_string());
+        }
+        if let Some(ref end) = options.end_time {
+            gif_args.push("-to".to_string());
+            gif_args.push(end.clone());
+        }
+        gif_args.push("-vf".to_string());
+        gif_args.push("fps=10,scale=480:-1:flags=lanczos".to_string());
+        gif_args.push(output.to_string());
+        return run_command_with_job_id("ffmpeg", &gif_args, job_id, duration)
+            .map(|_| output.to_string());
+    }
+    
     let mut args: Vec<String> = vec![
         "-i".to_string(),
         input.to_string(),
-        "-y".to_string(), // Overwrite without asking
+        "-y".to_string(),
     ];
     
     // Check for GPU encoding
@@ -274,10 +295,8 @@ fn convert_video(
         None
     };
     
-    // Add time trimming (before input for faster seeking)
+    // Add time trimming
     if let Some(ref start) = options.start_time {
-        // Move -ss before -i for input seeking (faster but less accurate)
-        // For accuracy, keep after -i
         args.insert(0, start.clone());
         args.insert(0, "-ss".to_string());
     }
@@ -286,176 +305,237 @@ fn convert_video(
         args.push(end.clone());
     }
     
-    // Add resolution
-    if let (Some(w), Some(h)) = (options.width, options.height) {
-        args.push("-vf".to_string());
-        args.push(format!("scale={}:{}", w, h));
-    }
-    
-    // Add FPS
-    if let Some(fps) = options.fps {
-        args.push("-r".to_string());
-        args.push(fps.to_string());
-    }
-    
-    // Format-specific settings with GPU support
-    match format {
-        "gif" => {
-            args.push("-vf".to_string());
-            args.push("fps=10,scale=480:-1:flags=lanczos".to_string());
+    // Add resolution filters
+    let mut vf_filters = Vec::new();
+    let mut custom_scale = false;
+    if let Some(preset) = options.preset_resolution.as_deref() {
+        let scale = match preset {
+            "4K" => "scale=3840:-2", 
+            "1080p" => "scale=1920:-2",
+            "720p" => "scale=1280:-2",
+            "480p" => "scale=854:-2",
+            "Custom" => {
+                custom_scale = true;
+                ""
+            },
+            _ => "",
+        };
+        if !scale.is_empty() {
+            vf_filters.push(scale.to_string());
         }
-        "webm" => {
-            // WebM supports VP9 (software) and AV1 (GPU available on newer cards)
-            if let Some(ref encoder) = gpu_encoder {
-                // Use AV1 GPU encoder for WebM (requires av1_nvenc, av1_amf, or av1_qsv)
-                args.push("-c:v".to_string());
-                args.push(encoder.clone());
-                args.push("-c:a".to_string());
-                args.push("libopus".to_string());
-                
-                // GPU encoder quality settings
-                if let Some(quality) = options.quality {
-                    match encoder.as_str() {
-                        "av1_nvenc" => {
-                            args.push("-preset".to_string());
-                            args.push("p4".to_string());
-                            args.push("-rc".to_string());
-                            args.push("vbr".to_string());
-                            let cq = ((100 - quality) as f32 * 0.51) as u32;
-                            args.push("-cq".to_string());
-                            args.push(cq.to_string());
-                        }
-                        "av1_amf" => {
-                            args.push("-quality".to_string());
-                            args.push("balanced".to_string());
-                            args.push("-rc".to_string());
-                            args.push("vbr_latency".to_string());
-                            let qp = ((100 - quality) as f32 * 0.51) as u32;
-                            args.push("-qp_i".to_string());
-                            args.push(qp.to_string());
-                            args.push("-qp_p".to_string());
-                            args.push(qp.to_string());
-                        }
-                        "av1_qsv" => {
-                            args.push("-preset".to_string());
-                            args.push("medium".to_string());
-                            let gq = ((100 - quality) as f32 * 0.51) as u32;
-                            args.push("-global_quality".to_string());
-                            args.push(gq.to_string());
-                        }
-                        _ => {}
-                    }
-                }
+    }
+    
+    if custom_scale {
+        if let (Some(w), Some(h)) = (options.custom_width, options.custom_height) {
+            let maintain = options.maintain_aspect_ratio.unwrap_or(true);
+            if maintain {
+                vf_filters.push(format!("scale={}:-2", w)); // or complex aspect ratio math if both are enforced. FFmpeg `scale=w:h:force_original_aspect_ratio=decrease` is better
+                // For simplicity mapping user desire: if lock is on, `scale=w:-2` or `-2:h` might be applied. 
+                // Let's implement full aspect ratio force:
+                vf_filters.push(format!("scale={}:{}:force_original_aspect_ratio=decrease,pad={}:{}:(ow-iw)/2:(oh-ih)/2", w, h, w, h));
             } else {
-                // Fall back to VP9 software encoder
-                args.push("-c:v".to_string());
-                args.push("libvpx-vp9".to_string());
-                args.push("-c:a".to_string());
-                args.push("libopus".to_string());
-                // Add quality settings for VP9
-                if let Some(quality) = options.quality {
-                    let crf = ((100 - quality) as f32 * 0.63) as u32; // Map 0-100 to 63-0
-                    args.push("-crf".to_string());
-                    args.push(crf.to_string());
-                    args.push("-b:v".to_string());
-                    args.push("0".to_string()); // Use CRF mode
-                }
+                vf_filters.push(format!("scale={}:{}", w, h));
             }
         }
-        "mp4" | "mov" | "mkv" | "avi" => {
-            if let Some(ref encoder) = gpu_encoder {
-                // Use GPU encoder
-                args.push("-c:v".to_string());
-                args.push(encoder.clone());
-                
-                // GPU encoders use different quality parameters
-                if let Some(quality) = options.quality {
-                    match encoder.as_str() {
-                        // NVIDIA NVENC
-                        "h264_nvenc" | "hevc_nvenc" | "av1_nvenc" => {
-                            args.push("-preset".to_string());
-                            args.push("p4".to_string()); // Balanced preset
-                            args.push("-rc".to_string());
-                            args.push("vbr".to_string());
-                            // NVENC uses -cq for quality (0-51, lower is better)
-                            let cq = ((100 - quality) as f32 * 0.51) as u32;
-                            args.push("-cq".to_string());
-                            args.push(cq.to_string());
-                        }
-                        // AMD AMF
-                        "h264_amf" | "hevc_amf" | "av1_amf" => {
-                            args.push("-quality".to_string());
-                            args.push("balanced".to_string());
-                            // AMF uses -rc and -qp for quality
-                            args.push("-rc".to_string());
-                            args.push("vbr_latency".to_string());
-                            let qp = ((100 - quality) as f32 * 0.51) as u32;
-                            args.push("-qp_i".to_string());
-                            args.push(qp.to_string());
-                            args.push("-qp_p".to_string());
-                            args.push(qp.to_string());
-                        }
-                        // Intel QSV
-                        "h264_qsv" | "hevc_qsv" | "av1_qsv" => {
-                            args.push("-preset".to_string());
-                            args.push("medium".to_string());
-                            // QSV uses -global_quality
-                            let gq = ((100 - quality) as f32 * 0.51) as u32;
-                            args.push("-global_quality".to_string());
-                            args.push(gq.to_string());
-                        }
-                        // Apple VideoToolbox
-                        "h264_videotoolbox" | "hevc_videotoolbox" => {
-                            // VideoToolbox uses -q:v (1-100, higher is better)
-                            args.push("-q:v".to_string());
-                            args.push(quality.to_string());
-                        }
-                        _ => {
-                            // Fallback to bitrate-based quality
-                            if let Some(ref bitrate) = options.bitrate {
-                                args.push("-b:v".to_string());
-                                args.push(bitrate.clone());
-                            }
-                        }
-                    }
-                }
-            } else {
-                // Use software encoder (libx264)
-                args.push("-c:v".to_string());
-                args.push("libx264".to_string());
-                
-                // Add quality settings for software encoder
-                if let Some(quality) = options.quality {
-                    let crf = ((100 - quality) as f32 * 0.51) as u32; // Map 0-100 to 51-0
-                    args.push("-crf".to_string());
-                    args.push(crf.to_string());
-                }
-                
-                args.push("-preset".to_string());
-                args.push("medium".to_string());
-            }
-            
-            args.push("-c:a".to_string());
-            args.push("aac".to_string());
-        }
-        _ => {
-            // Add quality settings for other formats
-            if let Some(quality) = options.quality {
-                let crf = ((100 - quality) as f32 * 0.51) as u32;
-                args.push("-crf".to_string());
-                args.push(crf.to_string());
-            }
+    } else if options.preset_resolution.is_none() {
+        if let (Some(w), Some(h)) = (options.width, options.height) {
+            vf_filters.push(format!("scale={}:{}", w, h));
         }
     }
     
-    // Add bitrate if specified (overrides CRF-based quality)
-    if let Some(ref bitrate) = options.bitrate {
+    // Add Frame Rate
+    if let Some(fps_val) = &options.fps {
+        if let Some(fps_str) = fps_val.as_str() {
+            if fps_str != "Match Source" {
+                args.push("-r".to_string());
+                args.push(fps_str.to_string());
+            }
+        } else if let Some(fps_num) = fps_val.as_f64() {
+            args.push("-r".to_string());
+            args.push(fps_num.to_string());
+        }
+    }
+
+    // Advanced Codec & Encoding Options
+    let video_codec = options.video_codec.as_deref().unwrap_or("H.264");
+    let audio_codec = options.audio_codec.as_deref().unwrap_or("AAC");
+    let bitrate_mode = options.bitrate_mode.as_deref().unwrap_or("VBR");
+    
+    // Apply Video Codec
+    let ffmpeg_vcodec = match video_codec {
+        "H.265" | "HEVC" => {
+            if let Some(ref encoder) = gpu_encoder {
+                match encoder.as_str() {
+                    "hevc_nvenc" | "hevc_amf" | "hevc_qsv" | "hevc_videotoolbox" => encoder.clone(),
+                    _ => "libx265".to_string(),
+                }
+            } else { "libx265".to_string() }
+        },
+        "VP9" => "libvpx-vp9".to_string(), 
+        "AV1" => {
+            if let Some(ref encoder) = gpu_encoder {
+                match encoder.as_str() {
+                    "av1_nvenc" | "av1_amf" | "av1_qsv" => encoder.clone(),
+                    _ => "libsvtav1".to_string(),
+                }
+            } else { "libsvtav1".to_string() }
+        },
+        _ => { // default H.264
+            if let Some(ref encoder) = gpu_encoder {
+                match encoder.as_str() {
+                    "h264_nvenc" | "h264_amf" | "h264_qsv" | "h264_videotoolbox" => encoder.clone(),
+                    _ => "libx264".to_string(),
+                }
+            } else { "libx264".to_string() }
+        }
+    };
+    
+    args.push("-c:v".to_string());
+    args.push(ffmpeg_vcodec.clone());
+    
+    // Quality & Bitrate
+    if bitrate_mode == "VBR" {
+        let crf = options.crf.unwrap_or(23);
+        
+        if ffmpeg_vcodec.contains("nvenc") {
+            args.push("-rc".to_string());
+            args.push("vbr".to_string());
+            args.push("-cq".to_string());
+            args.push(crf.to_string());
+        } else if ffmpeg_vcodec.contains("amf") {
+            args.push("-rc".to_string());
+            args.push("vbr_latency".to_string());
+            args.push("-qp_i".to_string());
+            args.push(crf.to_string());
+            args.push("-qp_p".to_string());
+            args.push(crf.to_string());
+        } else if ffmpeg_vcodec.contains("qsv") {
+            args.push("-global_quality".to_string());
+            args.push(crf.to_string());
+        } else if ffmpeg_vcodec.contains("videotoolbox") {
+            let qv = ((51 - crf) as f32 / 51.0 * 100.0) as u32; // Map roughly
+            args.push("-q:v".to_string());
+            args.push(qv.to_string());
+        } else {
+            args.push("-crf".to_string());
+            args.push(crf.to_string());
+            if ffmpeg_vcodec == "libvpx-vp9" {
+                 args.push("-b:v".to_string());
+                 args.push("0".to_string());
+            }
+        }
+    } else {
+        // CBR mode
+        let bitrate_mbps = options.video_bitrate.unwrap_or(8.0);
+        let target_bitrate = format!("{}M", bitrate_mbps);
+        
         args.push("-b:v".to_string());
-        args.push(bitrate.clone());
+        args.push(target_bitrate.clone());
+        args.push("-maxrate".to_string());
+        args.push(target_bitrate.clone());
+        args.push("-bufsize".to_string());
+        args.push(format!("{}M", bitrate_mbps * 2.0));
+    }
+    
+    // Audio Codec
+    if audio_codec == "No Audio" {
+        args.push("-an".to_string());
+    } else {
+        let ffmpeg_acodec = match audio_codec {
+            "MP3" => "libmp3lame",
+            "Opus" => "libopus", // WebM might override this earlier but this covers explicit cases
+            _ => "aac",
+        };
+        args.push("-c:a".to_string());
+        args.push(ffmpeg_acodec.to_string());
+        
+        let audio_bitrate = options.audio_bitrate_kbps.unwrap_or(192);
+        args.push("-b:a".to_string());
+        args.push(format!("{}k", audio_bitrate));
+        
+        if let Some(sample_rate) = options.audio_sample_rate.as_deref() {
+            if sample_rate != "Match Source" {
+                let sr_val = match sample_rate {
+                    "44.1kHz" => "44100",
+                    "48kHz" => "48000",
+                    _ => "",
+                };
+                if !sr_val.is_empty() {
+                    args.push("-ar".to_string());
+                    args.push(sr_val.to_string());
+                }
+            }
+        }
+        
+        if let Some(vol) = options.volume_db {
+            if vol != 0 {
+                args.push("-af".to_string());
+                args.push(format!("volume={}dB", vol));
+            }
+        }
+        
+        if let Some(channels) = options.channel_layout.as_deref() {
+            if channels != "Auto" {
+                let ac = match channels {
+                    "Mono" => "1",
+                    "Stereo" => "2",
+                    "5.1" => "6",
+                    _ => "",
+                };
+                if !ac.is_empty() {
+                    args.push("-ac".to_string());
+                    args.push(ac.to_string());
+                }
+            }
+        }
+    }
+    
+    // Subtitles
+    if let Some(sub_action) = options.subtitle_action.as_deref() {
+        match sub_action {
+            "Strip All" => {
+                args.push("-sn".to_string());
+            },
+            "Burn Into Video" => {
+                if let Some(index) = options.subtitle_stream_index {
+                    // Escape the path for FFmpeg filter: replace backslashes and colons (common in Windows paths)
+                    let escaped_path = input.replace("\\", "/").replace(":", "\\:");
+                    vf_filters.push(format!("subtitles='{}':si={}", escaped_path, index));
+                }
+            },
+            _ => { // "No Change"
+                args.push("-c:s".to_string());
+                args.push("copy".to_string());
+            }
+        }
+    }
+
+    if !vf_filters.is_empty() {
+        args.push("-vf".to_string());
+        args.push(vf_filters.join(","));
     }
     
     args.push(output.to_string());
     
+    let is_two_pass = options.two_pass.unwrap_or(false) && bitrate_mode == "CBR";
+    
+    if is_two_pass {
+        let mut pass1_args = args.clone();
+        pass1_args.pop(); // remove output filename
+        pass1_args.push("-pass".to_string());
+        pass1_args.push("1".to_string());
+        pass1_args.push("-f".to_string());
+        pass1_args.push(if format == "webm" { "webm".to_string() } else if format == "mkv" { "matroska".to_string() } else { "mp4".to_string() }); 
+        pass1_args.push(if cfg!(windows) { "NUL".to_string() } else { "/dev/null".to_string() });
+        
+        let _ = run_command_with_job_id("ffmpeg", &pass1_args, job_id, duration);
+        
+        let out = args.pop().unwrap();
+        args.push("-pass".to_string());
+        args.push("2".to_string());
+        args.push(out);
+    }
+
     run_command_with_job_id("ffmpeg", &args, job_id, duration)
         .map(|_| output.to_string())
 }
